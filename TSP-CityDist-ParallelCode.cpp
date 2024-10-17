@@ -7,7 +7,7 @@
 
 using namespace std;
 
-const int NUM_CITIES = 8; // Increase this for more computation, e.g., 20-22 cities
+const int NUM_CITIES = 12; // Increase this for more computation, e.g., 20-22 cities
 vector<pair<int, int>> cities(NUM_CITIES);
 
 // Function to calculate the distance between two cities
