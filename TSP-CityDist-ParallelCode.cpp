@@ -1,16 +1,20 @@
-#include <iostream> 
+#include <iostream>
 #include <vector>
 #include <algorithm>
 #include <cmath>
 #include <chrono>
-#include <numeric> 
+#include <numeric> // For iota
+
 
 using namespace std;
 
 const int NUM_CITIES = 12; // Increase this for more computation, e.g., 20-22 cities
-vector<pair<int, int>> cities(NUM_CITIES);
+// vector<pair<int, int>> cities(NUM_CITIES);
 
-// Function to calculate the distance between two cities
+vector<pair<int, int>> cities = {
+    {595, 759}, {207, 752}, {3, 925}, {492, 958}, {890, 80}, {562, 85}, {463, 217}, {239, 15}, {716, 698}, {596, 137}, {281, 753}, {323, 719}};
+
+// Function to calculate the eiclidean distance between two cities
 double distance(pair<int, int> city1, pair<int, int> city2)
 {
     return sqrt(pow(city1.first - city2.first, 2) + pow(city1.second - city2.second, 2));
@@ -21,9 +25,10 @@ double calculateRouteDistance(const vector<int> &route, const vector<pair<int, i
 {
     double total_distance = 0.0;
 
-    // Outer loop for visiting every city in the route
+
     for (int i = 0; i < route.size() - 1; ++i)
     {
+
         // Inner loop to simulate repeated recalculations (nested complexity)
         for (int j = 0; j < route.size(); ++j)
         {
@@ -32,7 +37,8 @@ double calculateRouteDistance(const vector<int> &route, const vector<pair<int, i
         }
     }
 
-    // Add the distance to return to the starting city (repeated with another loop)
+    //  Add the distance to return to the starting city (repeated with another loop)
+
     for (int k = 0; k < route.size(); ++k)
     {
         total_distance += distance(cities[route.back()], cities[route[k]]);
@@ -41,48 +47,58 @@ double calculateRouteDistance(const vector<int> &route, const vector<pair<int, i
     return total_distance;
 }
 
+// Function to calculate factorial for approximating permutations
+long long factorial(int n)
+{
+    return (n <= 1) ? 1 : n * factorial(n - 1);
+}
+
 // Brute-force function to solve TSP with nested loops
 double solveTSP(const vector<pair<int, int>> &cities)
 {
     vector<int> city_indices(cities.size());
-    iota(city_indices.begin(), city_indices.end(), 0); 
+    iota(city_indices.begin(), city_indices.end(), 0); // Fill with 0, 1, 2,... N-1
 
-    double min_distance = numeric_limits<double>::max();
+    double min_distance = numeric_limits<double>::max(); // Store the minimum distance found so far
+                                                         // Generate all permutations of the cities and calculate the total distance
 
-    // Generate all permutations of the cities and calculate the total distance
-    do
+
+    for (int i = 0; i < factorial(city_indices.size() - 1); ++i) // Approximation for permutations
     {
-        // Start the timer for this section
-        auto section_start = chrono::high_resolution_clock::now();
 
-        // Nested loop to add complexity while calculating the route distance
-        for (int m = 0; m < 1000; ++m)
-        { // Outer loop for repeated distance calculations
-            double current_distance = calculateRouteDistance(city_indices, cities);
-            if (current_distance < min_distance)
-            {
-                min_distance = current_distance;
-            }
+        vector<int> local_route = city_indices;
+
+        // Generate the i-th permutation
+        size_t idx = i;
+        for (size_t j = 1; j < local_route.size(); ++j)
+        {
+            swap(local_route[j], local_route[j + idx % (local_route.size() - j)]);
+            idx /= (local_route.size() - j);
         }
 
-        // End the timer for this section
-        auto section_end = chrono::high_resolution_clock::now();
-        chrono::duration<double> section_diff = section_end - section_start;
-        cout << "Section execution time (1000 distance calculations): " << section_diff.count() << " seconds" << endl;
+        // Calculate the distance for the current route
+        double current_distance = calculateRouteDistance(city_indices, cities);
 
-    } while (next_permutation(city_indices.begin() + 1, city_indices.end())); // Skip the first city (start point)
+        // Update the shared min_distance (race condition here)
+        if (current_distance < min_distance)
+        {
+            min_distance = current_distance; // Shared variable accessed unsafely
+        }
+    }
 
     return min_distance;
 }
 
 int main()
 {
-    //  city coordinates (randomly generated)
-    srand(time(0));
-    for (int i = 0; i < NUM_CITIES; ++i)
-    {
-        cities[i] = {rand() % 1000, rand() % 1000}; // Cities are in a 1000x1000 grid
-    }
+    // Predefined city coordinates (randomly generated)
+
+    /*   srand(time(0));
+      for (int i = 0; i < NUM_CITIES; ++i)
+      {
+          cities[i] = {rand() % 1000, rand() % 1000}; // Cities are in a 1000x1000 grid
+      } */
+    // omp_set_num_threads(4);
 
     // Print cities
     cout << "Cities (X, Y): " << endl;
@@ -100,7 +116,7 @@ int main()
     chrono::duration<double> diff = end - start;
 
     cout << "Minimum Distance: " << min_distance << endl;
-    cout << "Total Execution Time: " << diff.count() << " seconds" << endl;
+    cout << "Execution Time (solveTSP): " << diff.count() << " seconds" << endl;
 
     return 0;
 }
